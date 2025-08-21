@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
   const [localDownvotes, setLocalDownvotes] = useState(dump.downvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
   const handleVote = (voteType: 'up' | 'down') => {
@@ -72,9 +73,21 @@ const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
   };
 
   const toggleAudio = () => {
-    setIsPlaying(!isPlaying);
-    // In a real app, this would control audio playback
-    console.log(`${isPlaying ? 'Stopping' : 'Playing'} audio for dump ${dump.id}`);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch((error) => {
+          console.error('Error playing audio:', error);
+          toast({
+            title: "Error",
+            description: "Failed to play audio",
+            variant: "destructive",
+            duration: 2000,
+          });
+        });
+      }
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -141,27 +154,39 @@ const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
           )}
           
           {dump.type === 'voice' && (
-            <div className="bg-muted rounded-lg p-6 flex items-center justify-center">
-              <Button
-                onClick={toggleAudio}
-                variant="outline"
-                size="lg"
-                className="flex items-center gap-3"
-              >
-                {isPlaying ? (
-                  <VolumeX className="w-6 h-6" />
-                ) : (
-                  <Volume2 className="w-6 h-6" />
-                )}
-                {isPlaying ? 'Stop Audio' : 'Play Audio'}
-              </Button>
+            <div className="bg-muted rounded-lg p-6">
+              <div className="flex items-center justify-center mb-4">
+                <Button
+                  onClick={toggleAudio}
+                  variant="outline"
+                  size="lg"
+                  className="flex items-center gap-3"
+                >
+                  {isPlaying ? (
+                    <VolumeX className="w-6 h-6" />
+                  ) : (
+                    <Volume2 className="w-6 h-6" />
+                  )}
+                  {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                </Button>
+              </div>
               <audio 
+                ref={audioRef}
                 src={dump.content} 
                 controls 
-                className="w-full mt-4"
+                className="w-full"
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
+                onError={(e) => {
+                  console.error('Audio error:', e);
+                  toast({
+                    title: "Error",
+                    description: "Failed to load audio",
+                    variant: "destructive",
+                    duration: 2000,
+                  });
+                }}
               />
             </div>
           )}
