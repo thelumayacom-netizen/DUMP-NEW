@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
   DropdownMenu,
@@ -7,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 
 const Navigation = () => {
   const location = useLocation();
@@ -19,61 +18,75 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-12 h-12 bg-transparent rounded-lg flex items-center justify-center">
-              {/* <span className="text-primary font-bold text-sm">D</span>
-               */}
-              <img style={{width: '70px'}} src="/logo.png" alt="Logo" />
+              <img style={{ width: "70px" }} src="/logo.png" alt="Logo" />
             </div>
-            {/* <span className="text-white font-bold text-xl">DumpSpace</span> */}
           </Link>
 
-          {/* Navigation Links */}
+          {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`text-white hover:text-white/80 font-medium transition-colors ${
-                location.pathname === '/' ? 'text-accent' : ''
+                location.pathname === "/" ? "text-accent" : ""
               }`}
             >
               Home
             </Link>
-            
-            <Link 
-              to="/categories" 
+
+            <Link
+              to="/categories"
               className={`text-white hover:text-white/80 font-medium transition-colors ${
-                location.pathname === '/categories' ? 'text-accent' : ''
+                location.pathname === "/categories" ? "text-accent" : ""
               }`}
             >
               Categories
             </Link>
 
-            <Link 
-              to="/leaderboard" 
+            <Link
+              to="/leaderboard"
               className={`text-white hover:text-white/80 font-medium transition-colors ${
-                location.pathname === '/leaderboard' ? 'text-accent' : ''
+                location.pathname === "/leaderboard" ? "text-accent" : ""
               }`}
             >
               Leaderboard
             </Link>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                {/* <Button variant="nav" className="flex items-center gap-1">
-                  More <ChevronDown className="w-4 h-4" />
-                </Button> */}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuItem>About</DropdownMenuItem>
-                <DropdownMenuItem>FAQ</DropdownMenuItem>
-                <DropdownMenuItem>Contact</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Right Section (Auth + Mobile Menu) */}
           <div className="flex items-center space-x-4">
-            <Button variant="secondary" className="bg-white/20 text-white border border-white/30 hover:bg-white/30">
-              Submit Dump
-            </Button>
+            {/* Auth Buttons (if any in future) */}
+
+            {/* Mobile Navigation Menu */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/10"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem>
+                    <Link to="/" className="w-full block">
+                      Home
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/categories" className="w-full block">
+                      Categories
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/leaderboard" className="w-full block">
+                      Leaderboard
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
