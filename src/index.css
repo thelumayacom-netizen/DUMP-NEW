@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Recraft-inspired design system adapted for DumpSpace with enhanced animations */
+
+@layer base {
+  :root {
+    --background: 255 91% 97%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 263 87% 62%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 263 20% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 76 100% 65%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 263 87% 62%;
+
+    --radius: 0.75rem;
+
+    /* Custom gradient and brand colors */
+    --gradient-primary: linear-gradient(135deg, hsl(263 87% 62%), hsl(283 87% 72%));
+    --gradient-hero: linear-gradient(135deg, hsl(263 87% 62%) 0%, hsl(283 87% 72%) 50%, hsl(303 87% 82%) 100%);
+    --brand-accent: 76 100% 65%;
+    --brand-accent-hover: 76 100% 60%;
+    --hero-text: 0 0% 100%;
+    --nav-glass: 263 87% 62% / 0.1;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 263 87% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 263 87% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 263 87% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 263 87% 62%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 263 20% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 263 20% 15%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 76 100% 65%;
+    --accent-foreground: 263 87% 8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 263 20% 20%;
+    --input: 263 20% 20%;
+    --ring: 263 87% 62%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(263 87% 62%), hsl(283 87% 72%));
+    --gradient-hero: linear-gradient(135deg, hsl(263 87% 62%) 0%, hsl(283 87% 72%) 50%, hsl(303 87% 82%) 100%);
+    --nav-glass: 263 87% 62% / 0.15;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Enhanced animations for DumpSpace */
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
+  .story-link {
+    @apply relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
