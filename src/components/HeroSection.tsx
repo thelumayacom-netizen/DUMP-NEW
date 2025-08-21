@@ -88,7 +88,7 @@ const HeroSection = () => {
       </div>
 
       <div className="container mx-auto px-6 pt-24 pb-12 relative z-10">
-        <div className="text-center" style={{ marginLeft: "6vw" }}>
+        <div className="text-center ml-[7vw] md:ml-[5vw]">
             {/* Large Brand Typography */}
             <div className="mb-8">
               <div className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-none tracking-tight mb-4 relative">
