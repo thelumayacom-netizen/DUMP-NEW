@@ -211,17 +211,11 @@ const HeroSection = () => {
                 {/* Current Dump Display */}
                 {currentDump && !isLoading && (
                   <div key={key} className="animate-fade-in">
-                    <DumpCard dump={currentDump} />
-                    <div className="mt-6 text-center">
-                      <Button 
-                        onClick={handleGetRandomDump}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Shuffle className="w-4 h-4" />
-                        Get Another Dump
-                      </Button>
-                    </div>
+                    <DumpCard 
+                      dump={currentDump} 
+                      showGetAnotherButton={true}
+                      onGetAnother={handleGetRandomDump}
+                    />
                   </div>
                 )}
               </div>

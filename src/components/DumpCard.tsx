@@ -2,16 +2,23 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX, Shuffle } from "lucide-react";
 import { DumpWithTimestamp, rateDump, reportDump } from "@/services/supabaseService"
 import { useToast } from "@/hooks/use-toast";
 
 interface DumpCardProps {
   dump: DumpWithTimestamp;
   className?: string;
+  showGetAnotherButton?: boolean;
+  onGetAnother?: () => void;
 }
 
-const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
+const DumpCard = ({ 
+  dump, 
+  className = "", 
+  showGetAnotherButton = false,
+  onGetAnother 
+}: DumpCardProps) => {
   const [localUpvotes, setLocalUpvotes] = useState(dump.upvotes);
   const [localDownvotes, setLocalDownvotes] = useState(dump.downvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
@@ -205,34 +212,59 @@ const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleVote('up')}
-              className="flex items-center gap-2"
-            >
-              <ThumbsUp className="w-4 h-4" />
-              {localUpvotes}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleVote('down')}
-              className="flex items-center gap-2"
-            >
-              <ThumbsDown className="w-4 h-4" />
-              {localDownvotes}
-            </Button>
-          </div>
+       {/* Actions */}
+<div className="relative w-full">
+  <div className="flex items-center">
+    {/* Left: votes (unchanged) */}
+    <div className="flex items-center gap-4">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleVote('up')}
+        className="flex items-center gap-2"
+      >
+        <ThumbsUp className="w-4 h-4" />
+        {localUpvotes}
+      </Button>
 
-          <div className="text-sm text-muted-foreground">
-            Rating: {dump.rating.toFixed(1)}★
-          </div>
-        </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleVote('down')}
+        className="flex items-center gap-2"
+      >
+        <ThumbsDown className="w-4 h-4" />
+        {localDownvotes}
+      </Button>
+    </div>
+
+    {/* Spacer to push rating to the right */}
+    <div className="ml-auto text-sm text-muted-foreground">
+      Rating: {dump.rating.toFixed(1)}★
+    </div>
+  </div>
+
+  {/* Center: absolutely centered across the whole row on sm+ only */}
+  <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden sm:block z-20">
+    {showGetAnotherButton && onGetAnother && (
+      <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
+        <Shuffle className="w-4 h-4" />
+        Get Another
+      </Button>
+    )}
+  </div>
+
+  {/* Mobile fallback: show Get Another as a centered full-width (or auto) button below actions */}
+  <div className="w-full flex justify-center mt-3 sm:hidden">
+    {showGetAnotherButton && onGetAnother && (
+      <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
+        <Shuffle className="w-4 h-4" />
+        Get Another
+      </Button>
+    )}
+  </div>
+</div>
+
       </CardContent>
     </Card>
   );
