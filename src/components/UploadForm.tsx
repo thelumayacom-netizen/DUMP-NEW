@@ -621,24 +621,31 @@ const stopCamera = () => {
               <Label>Upload Video File or Record</Label>
               
               {/* Recording Interface */}
-              {isRecording && showCamera && (
+              {/* Recording Interface */}
+              {isRecording && dumpType === 'video' && (
                 <div className="space-y-3">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full max-h-64 rounded-lg bg-black"
-                  />
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                      <span className="text-red-700 font-medium">Recording Video...</span>
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full max-h-64 rounded-lg bg-black"
+                    />
+                    {/* Recording overlay */}
+                    <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      REC {formatTime(recordingTime)}
                     </div>
-                    <div className="text-2xl font-mono text-red-700 mb-3">
-                      {formatTime(recordingTime)}
-                    </div>
-                    <Button type="button" onClick={stopRecording} variant="destructive" className="flex items-center gap-2">
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    <Button 
+                      type="button" 
+                      onClick={stopRecording} 
+                      variant="destructive" 
+                      size="lg"
+                      className="flex items-center gap-2"
+                    >
                       <Square className="w-4 h-4" />
                       Stop Recording
                     </Button>
