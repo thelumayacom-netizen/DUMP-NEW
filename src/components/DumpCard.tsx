@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,8 +23,41 @@ const DumpCard = ({
   const [localDownvotes, setLocalDownvotes] = useState(dump.downvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+
+  // Preload media content
+  useEffect(() => {
+    if (dump.type === 'image' || dump.type === 'video' || dump.type === 'voice') {
+      const preloadMedia = () => {
+        if (dump.type === 'image') {
+          const img = new Image();
+          img.onload = () => setMediaLoaded(true);
+          img.onerror = () => setMediaLoaded(true); // Still set loaded to show fallback
+          img.src = dump.content;
+        } else if (dump.type === 'video') {
+          const video = document.createElement('video');
+          video.onloadeddata = () => setMediaLoaded(true);
+          video.onerror = () => setMediaLoaded(true);
+          video.preload = 'metadata';
+          video.src = dump.content;
+        } else if (dump.type === 'voice') {
+          const audio = new Audio();
+          audio.onloadeddata = () => setMediaLoaded(true);
+          audio.onerror = () => setMediaLoaded(true);
+          audio.preload = 'metadata';
+          audio.src = dump.content;
+        }
+      };
+
+      preloadMedia();
+    } else {
+      setMediaLoaded(true); // Text content is always "loaded"
+    }
+  }, [dump.content, dump.type]);
 
   const handleVote = (voteType: 'up' | 'down') => {
     // Prevent rapid clicking
@@ -114,6 +147,15 @@ const DumpCard = ({
     });
   };
 
+  // Loading skeleton for media
+  const MediaSkeleton = () => (
+    <div className="bg-muted rounded-lg overflow-hidden animate-pulse">
+      <div className="w-full h-64 bg-muted-foreground/20 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    </div>
+  );
+
   return (
     <Card className={`w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in ${className}`}>
       <CardContent className="p-6">
@@ -149,65 +191,84 @@ const DumpCard = ({
           
           {dump.type === 'image' && (
             <div className="relative bg-muted rounded-lg overflow-hidden">
-              <img 
-                src={dump.content} 
-                alt="User uploaded content"
-                className="w-full h-auto max-h-96 object-contain bg-background"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
-                }}
-              />
+              {!mediaLoaded ? (
+                <MediaSkeleton />
+              ) : (
+                <img 
+                  ref={imageRef}
+                  src={dump.content} 
+                  alt="User uploaded content"
+                  className="w-full h-auto max-h-96 object-contain bg-background"
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                  }}
+                />
+              )}
             </div>
           )}
           
           {dump.type === 'voice' && (
             <div className="bg-muted rounded-lg p-6">
-              <div className="flex items-center justify-center mb-4">
-                <Button
-                  onClick={toggleAudio}
-                  variant="outline"
-                  size="lg"
-                  className="flex items-center gap-3"
-                >
-                  {isPlaying ? (
-                    <VolumeX className="w-6 h-6" />
-                  ) : (
-                    <Volume2 className="w-6 h-6" />
-                  )}
-                  {isPlaying ? 'Pause Audio' : 'Play Audio'}
-                </Button>
-              </div>
-              <audio 
-                ref={audioRef}
-                src={dump.content} 
-                controls 
-                className="w-full"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                onError={(e) => {
-                  console.error('Audio error:', e);
-                  toast({
-                    title: "Error",
-                    description: "Failed to load audio",
-                    variant: "destructive",
-                    duration: 2000,
-                  });
-                }}
-              />
+              {!mediaLoaded ? (
+                <MediaSkeleton />
+              ) : (
+                <>
+                  <div className="flex items-center justify-center mb-4">
+                    <Button
+                      onClick={toggleAudio}
+                      variant="outline"
+                      size="lg"
+                      className="flex items-center gap-3"
+                    >
+                      {isPlaying ? (
+                        <VolumeX className="w-6 h-6" />
+                      ) : (
+                        <Volume2 className="w-6 h-6" />
+                      )}
+                      {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                    </Button>
+                  </div>
+                  <audio 
+                    ref={audioRef}
+                    src={dump.content} 
+                    controls 
+                    className="w-full"
+                    preload="metadata"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    onError={(e) => {
+                      console.error('Audio error:', e);
+                      toast({
+                        title: "Error",
+                        description: "Failed to load audio",
+                        variant: "destructive",
+                        duration: 2000,
+                      });
+                    }}
+                  />
+                </>
+              )}
             </div>
           )}
           
           {dump.type === 'video' && (
             <div className="relative">
-              <video 
-                src={dump.content} 
-                controls 
-                className="w-full h-auto rounded-lg max-h-96"
-                onError={(e) => {
-                  e.currentTarget.poster = 'https://via.placeholder.com/400x300?text=Video+Not+Found';
-                }}
-              />
+              {!mediaLoaded ? (
+                <MediaSkeleton />
+              ) : (
+                <video 
+                  ref={videoRef}
+                  src={dump.content} 
+                  controls 
+                  className="w-full h-auto rounded-lg max-h-96"
+                  preload="metadata"
+                  onError={(e) => {
+                    e.currentTarget.poster = 'https://via.placeholder.com/400x300?text=Video+Not+Found';
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
