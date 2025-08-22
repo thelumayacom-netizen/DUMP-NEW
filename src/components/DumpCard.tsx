@@ -141,11 +141,11 @@ const DumpCard = ({ dump, className = "" }: DumpCardProps) => {
           )}
           
           {dump.type === 'image' && (
-            <div className="relative">
+            <div className="relative bg-muted rounded-lg overflow-hidden">
               <img 
                 src={dump.content} 
                 alt="User uploaded content"
-                className="w-full h-auto rounded-lg max-h-96 object-cover"
+                className="w-full h-auto max-h-96 object-contain bg-background"
                 onError={(e) => {
                   e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
                 }}
