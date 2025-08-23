@@ -303,10 +303,14 @@ export const reportDump = async (id: string): Promise<{ success: boolean; messag
 // Get top rated dumps
 export const getTopRatedDumps = async (): Promise<DumpWithTimestamp[]> => {
   try {
+    // Calculate 24 hours ago
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
     const { data, error } = await supabase
       .from('dumps')
       .select('*')
-      .order('rating', { ascending: false })
+      .gte('created_at', twentyFourHoursAgo.toISOString())
       .order('upvotes', { ascending: false })
       .limit(10);
 
