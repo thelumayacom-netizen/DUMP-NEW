@@ -19,6 +19,7 @@ export const categories = [
 // Simple in-memory cache for dumps
 const dumpCache = {
   dumps: [] as DumpWithTimestamp[],
+  seenDumps: new Set<string>(), // Track seen dump IDs
   lastFetch: 0,
   cacheExpiry: 5 * 60 * 1000, // 5 minutes
   isExpired(): boolean {
@@ -27,6 +28,7 @@ const dumpCache = {
   clear(): void {
     this.dumps = [];
     this.lastFetch = 0;
+    // Don't clear seenDumps to maintain session
   }
 };
 
@@ -165,16 +167,13 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
   try {
     let dumps: DumpWithTimestamp[] = [];
 
-    // Check if cache is valid and has data
     if (dumpCache.dumps.length > 0 && !dumpCache.isExpired()) {
       dumps = dumpCache.dumps;
     } else {
-      // Fetch from database and update cache
       dumps = await fetchAndCacheDumps();
     }
 
     if (!dumps || dumps.length === 0) {
-      // Return a sample dump if no data exists
       return {
         id: 'sample-1',
         type: 'text',
@@ -188,13 +187,27 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
       };
     }
 
-    // Return random dump from cached data
-    const randomIndex = Math.floor(Math.random() * dumps.length);
-    return dumps[randomIndex];
+    // Filter out dumps the user has already seen
+    const unseenDumps = dumps.filter(dump => !dumpCache.seenDumps.has(dump.id));
+    
+    // If all dumps have been seen, reset and start over
+    if (unseenDumps.length === 0) {
+      dumpCache.seenDumps.clear();
+      const randomIndex = Math.floor(Math.random() * dumps.length);
+      const selectedDump = dumps[randomIndex];
+      dumpCache.seenDumps.add(selectedDump.id);
+      return selectedDump;
+    }
+
+    // Select random dump from unseen dumps and mark as seen
+    const randomIndex = Math.floor(Math.random() * unseenDumps.length);
+    const selectedDump = unseenDumps[randomIndex];
+    dumpCache.seenDumps.add(selectedDump.id);
+    
+    return selectedDump;
 
   } catch (error) {
     console.error('Get random dump failed:', error);
-    // Return sample dump on error
     return {
       id: 'sample-error',
       type: 'text',
