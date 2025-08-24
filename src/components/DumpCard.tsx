@@ -2,28 +2,32 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX, Shuffle } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX, Shuffle, MessageCircle, ArrowLeft } from "lucide-react";
 import { DumpWithTimestamp, rateDump, reportDump } from "@/services/supabaseService"
 import { useToast } from "@/hooks/use-toast";
+import CommentsSection from "@/components/CommentsSection";
 
 interface DumpCardProps {
   dump: DumpWithTimestamp;
   className?: string;
   showGetAnotherButton?: boolean;
   onGetAnother?: () => void;
+  hideCommentsButton?: boolean;
 }
 
 const DumpCard = ({ 
   dump, 
   className = "", 
   showGetAnotherButton = false,
-  onGetAnother 
+  onGetAnother,
+  hideCommentsButton = false
 }: DumpCardProps) => {
   const [localUpvotes, setLocalUpvotes] = useState(dump.upvotes);
   const [localDownvotes, setLocalDownvotes] = useState(dump.downvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -159,173 +163,210 @@ const DumpCard = ({
   return (
     <Card className={`w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in ${className}`}>
       <CardContent className="p-6">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex flex-wrap gap-2">
-            {dump.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="capitalize">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{formatTimestamp(dump.timestamp)}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReport}
-              className="p-1 h-auto text-muted-foreground hover:text-destructive"
-            >
-              <Flag className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        {!showComments && (
+          <>
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex flex-wrap gap-2">
+                {dump.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="capitalize">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{formatTimestamp(dump.timestamp)}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReport}
+                  className="p-1 h-auto text-muted-foreground hover:text-destructive"
+                >
+                  <Flag className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
 
-        {/* Content */}
-        <div className="mb-6">
-          {dump.type === 'text' && (
-            <p className="text-lg leading-relaxed text-foreground">
-              {dump.content}
-            </p>
-          )}
-          
-          {dump.type === 'image' && (
-            <div className="relative bg-muted rounded-lg overflow-hidden">
-              {!mediaLoaded ? (
-                <MediaSkeleton />
-              ) : (
-                <img 
-                  ref={imageRef}
-                  src={dump.content} 
-                  alt="User uploaded content"
-                  className="w-full h-auto max-h-96 object-contain bg-background"
-                  loading="eager"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
-                  }}
-                />
+            {/* Content */}
+            <div className="mb-6">
+              {dump.type === 'text' && (
+                <p className="text-lg leading-relaxed text-foreground">
+                  {dump.content}
+                </p>
+              )}
+              
+              {dump.type === 'image' && (
+                <div className="relative bg-muted rounded-lg overflow-hidden">
+                  {!mediaLoaded ? (
+                    <MediaSkeleton />
+                  ) : (
+                    <img 
+                      ref={imageRef}
+                      src={dump.content} 
+                      alt="User uploaded content"
+                      className="w-full h-auto max-h-96 object-contain bg-background"
+                      loading="eager"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+              
+              {dump.type === 'voice' && (
+                <div className="bg-muted rounded-lg p-6">
+                  {!mediaLoaded ? (
+                    <MediaSkeleton />
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center mb-4">
+                        <Button
+                          onClick={toggleAudio}
+                          variant="outline"
+                          size="lg"
+                          className="flex items-center gap-3"
+                        >
+                          {isPlaying ? (
+                            <VolumeX className="w-6 h-6" />
+                          ) : (
+                            <Volume2 className="w-6 h-6" />
+                          )}
+                          {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                        </Button>
+                      </div>
+                      <audio 
+                        ref={audioRef}
+                        src={dump.content} 
+                        controls 
+                        className="w-full"
+                        preload="metadata"
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                        onError={(e) => {
+                          console.error('Audio error:', e);
+                          toast({
+                            title: "Error",
+                            description: "Failed to load audio",
+                            variant: "destructive",
+                            duration: 2000,
+                          });
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {dump.type === 'video' && (
+                <div className="relative">
+                  {!mediaLoaded ? (
+                    <MediaSkeleton />
+                  ) : (
+                    <video 
+                      ref={videoRef}
+                      src={dump.content} 
+                      controls 
+                      className="w-full h-auto rounded-lg max-h-96"
+                      preload="metadata"
+                      onError={(e) => {
+                        e.currentTarget.poster = 'https://via.placeholder.com/400x300?text=Video+Not+Found';
+                      }}
+                    />
+                  )}
+                </div>
               )}
             </div>
-          )}
-          
-          {dump.type === 'voice' && (
-            <div className="bg-muted rounded-lg p-6">
-              {!mediaLoaded ? (
-                <MediaSkeleton />
-              ) : (
-                <>
-                  <div className="flex items-center justify-center mb-4">
+
+            {/* Actions */}
+            <div className="relative w-full">
+              <div className="flex items-center">
+                {/* Left: votes (unchanged) */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleVote('up')}
+                    className="flex items-center gap-2"
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    {localUpvotes}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleVote('down')}
+                    className="flex items-center gap-2"
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    {localDownvotes}
+                  </Button>
+
+                  {!hideCommentsButton && (
                     <Button
-                      onClick={toggleAudio}
                       variant="outline"
-                      size="lg"
-                      className="flex items-center gap-3"
+                      size="sm"
+                      onClick={() => setShowComments(!showComments)}
+                      className="flex items-center gap-2"
                     >
-                      {isPlaying ? (
-                        <VolumeX className="w-6 h-6" />
-                      ) : (
-                        <Volume2 className="w-6 h-6" />
-                      )}
-                      {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                      <MessageCircle className="w-4 h-4" />
+                      {dump.commentCount || 0}
                     </Button>
-                  </div>
-                  <audio 
-                    ref={audioRef}
-                    src={dump.content} 
-                    controls 
-                    className="w-full"
-                    preload="metadata"
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                    onEnded={() => setIsPlaying(false)}
-                    onError={(e) => {
-                      console.error('Audio error:', e);
-                      toast({
-                        title: "Error",
-                        description: "Failed to load audio",
-                        variant: "destructive",
-                        duration: 2000,
-                      });
-                    }}
-                  />
-                </>
-              )}
+                  )}
+                </div>
+
+                {/* Spacer to push rating to the right */}
+                <div className="ml-auto text-sm text-muted-foreground">
+                  Rating: {dump.rating.toFixed(1)}★
+                </div>
+              </div>
+
+              {/* Center: absolutely centered across the whole row on sm+ only */}
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden sm:block z-20">
+                {showGetAnotherButton && onGetAnother && (
+                  <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
+                    <Shuffle className="w-4 h-4" />
+                    Get Another
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile fallback: show Get Another as a centered full-width (or auto) button below actions */}
+              <div className="w-full flex justify-center mt-3 sm:hidden">
+                {showGetAnotherButton && onGetAnother && (
+                  <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
+                    <Shuffle className="w-4 h-4" />
+                    Get Another
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
-          
-          {dump.type === 'video' && (
-            <div className="relative">
-              {!mediaLoaded ? (
-                <MediaSkeleton />
-              ) : (
-                <video 
-                  ref={videoRef}
-                  src={dump.content} 
-                  controls 
-                  className="w-full h-auto rounded-lg max-h-96"
-                  preload="metadata"
-                  onError={(e) => {
-                    e.currentTarget.poster = 'https://via.placeholder.com/400x300?text=Video+Not+Found';
-                  }}
-                />
-              )}
+          </>
+        )}
+
+        {/* Inline Comments Section */}
+        {showComments && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowComments(false)}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dump
+              </Button>
             </div>
-          )}
-        </div>
-
-       {/* Actions */}
-<div className="relative w-full">
-  <div className="flex items-center">
-    {/* Left: votes (unchanged) */}
-    <div className="flex items-center gap-4">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handleVote('up')}
-        className="flex items-center gap-2"
-      >
-        <ThumbsUp className="w-4 h-4" />
-        {localUpvotes}
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handleVote('down')}
-        className="flex items-center gap-2"
-      >
-        <ThumbsDown className="w-4 h-4" />
-        {localDownvotes}
-      </Button>
-    </div>
-
-    {/* Spacer to push rating to the right */}
-    <div className="ml-auto text-sm text-muted-foreground">
-      Rating: {dump.rating.toFixed(1)}★
-    </div>
-  </div>
-
-  {/* Center: absolutely centered across the whole row on sm+ only */}
-  <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden sm:block z-20">
-    {showGetAnotherButton && onGetAnother && (
-      <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
-        <Shuffle className="w-4 h-4" />
-        Get Another
-      </Button>
-    )}
-  </div>
-
-  {/* Mobile fallback: show Get Another as a centered full-width (or auto) button below actions */}
-  <div className="w-full flex justify-center mt-3 sm:hidden">
-    {showGetAnotherButton && onGetAnother && (
-      <Button variant="outline" size="sm" onClick={onGetAnother} className="flex items-center gap-2">
-        <Shuffle className="w-4 h-4" />
-        Get Another
-      </Button>
-    )}
-  </div>
-</div>
-
+            <div className="flex items-center gap-2 mb-4">
+              <MessageCircle className="w-5 h-5 text-muted-foreground" />
+              <h3 className="text-lg font-semibold">Comments</h3>
+            </div>
+            <CommentsSection dumpId={dump.id} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

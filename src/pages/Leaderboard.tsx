@@ -114,7 +114,7 @@ const Leaderboard = () => {
                 #1 Today
               </Badge>
             </div>
-            <DumpCard dump={dumpOfTheDay} className="border-2 border-yellow-400/50 shadow-xl shadow-yellow-400/20" />
+            <DumpCard dump={dumpOfTheDay} className="border-2 border-yellow-400/50 shadow-xl shadow-yellow-400/20" hideCommentsButton={true} />
           </div>
         </div>}
 
@@ -138,7 +138,7 @@ const Leaderboard = () => {
                     #{index + 2}
                   </Badge>
                 </div>
-                <DumpCard dump={dump} className="animate-fade-in" />
+                <DumpCard dump={dump} className="animate-fade-in" hideCommentsButton={true} />
               </div>
             ))}
           </div>
@@ -164,7 +164,7 @@ const Leaderboard = () => {
                     New
                   </Badge>
                 </div>
-                <DumpCard dump={dump} className="animate-fade-in" />
+                <DumpCard dump={dump} className="animate-fade-in" hideCommentsButton={true} />
               </div>
             ))}
           </div>
