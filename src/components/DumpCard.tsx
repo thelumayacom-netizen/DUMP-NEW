@@ -2,28 +2,33 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX, Shuffle } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Flag, Volume2, VolumeX, Shuffle, MessageCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DumpWithTimestamp, rateDump, reportDump } from "@/services/supabaseService"
 import { useToast } from "@/hooks/use-toast";
+import CommentsSection from "@/components/CommentsSection";
 
 interface DumpCardProps {
   dump: DumpWithTimestamp;
   className?: string;
   showGetAnotherButton?: boolean;
   onGetAnother?: () => void;
+  hideCommentsButton?: boolean;
 }
 
 const DumpCard = ({ 
   dump, 
   className = "", 
   showGetAnotherButton = false,
-  onGetAnother 
+  onGetAnother,
+  hideCommentsButton = false
 }: DumpCardProps) => {
   const [localUpvotes, setLocalUpvotes] = useState(dump.upvotes);
   const [localDownvotes, setLocalDownvotes] = useState(dump.downvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -297,6 +302,18 @@ const DumpCard = ({
         <ThumbsDown className="w-4 h-4" />
         {localDownvotes}
       </Button>
+
+      {!hideCommentsButton && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowCommentsModal(true)}
+          className="flex items-center gap-2"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {dump.commentCount || 0}
+        </Button>
+      )}
     </div>
 
     {/* Spacer to push rating to the right */}
@@ -326,6 +343,18 @@ const DumpCard = ({
   </div>
 </div>
 
+      {/* Comments Modal */}
+      <Dialog open={showCommentsModal} onOpenChange={setShowCommentsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Comments
+            </DialogTitle>
+          </DialogHeader>
+          <CommentsSection dumpId={dump.id} />
+        </DialogContent>
+      </Dialog>
       </CardContent>
     </Card>
   );
