@@ -343,17 +343,37 @@ export const reportDump = async (id: string): Promise<{ success: boolean; messag
   };
 };
 
-// Get top rated dumps
 export const getTopRatedDumps = async (): Promise<DumpWithTimestamp[]> => {
   try {
     // Calculate 24 hours ago
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    const { data, error } = await supabase
+    // First check if there are at least 10 posts in last 24 hours
+    const { data: recentData, error: recentError } = await supabase
       .from('dumps')
       .select('*')
       .gte('created_at', twentyFourHoursAgo.toISOString())
+      .order('upvotes', { ascending: false })
+      .limit(10);
+
+    if (recentError) {
+      console.error('Error fetching recent dumps:', recentError);
+      return [];
+    }
+
+    // If we have 10 or more posts in last 24 hours, return them
+    if (recentData && recentData.length >= 10) {
+      return recentData.map(dump => ({
+        ...dump,
+        timestamp: dump.created_at
+      }));
+    }
+
+    // Otherwise, get top 10 without time limit
+    const { data, error } = await supabase
+      .from('dumps')
+      .select('*')
       .order('upvotes', { ascending: false })
       .limit(10);
 
