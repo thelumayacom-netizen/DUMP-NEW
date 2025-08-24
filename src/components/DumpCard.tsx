@@ -279,8 +279,8 @@ const DumpCard = ({
 
             {/* Actions */}
             <div className="relative w-full">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
-                {/* Left: votes */}
+              <div className="flex items-center">
+                {/* Left: votes (unchanged) */}
                 <div className="flex items-center gap-4">
                   <Button
                     variant="outline"
@@ -315,8 +315,8 @@ const DumpCard = ({
                   )}
                 </div>
 
-                {/* Right: rating - now properly positioned for mobile */}
-                <div className="text-sm text-muted-foreground sm:ml-auto">Rating: {dump.rating.toFixed(1)}★</div>
+                {/* Spacer to push rating to the right */}
+                <div className="ml-auto text-sm text-muted-foreground">{dump.rating.toFixed(1)}★</div>
               </div>
 
               {/* Center: absolutely centered across the whole row on sm+ only */}
