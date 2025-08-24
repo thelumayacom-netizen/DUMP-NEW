@@ -28,7 +28,8 @@ export const categories = [
   { name: 'Dreams', count: 0, color: 'bg-pink-100 text-pink-800' },
   { name: 'Food', count: 0, color: 'bg-orange-100 text-orange-800' },
   { name: 'Adult-life', count: 0, color: 'bg-gray-100 text-gray-800' },
-  { name: 'Awkward', count: 0, color: 'bg-red-100 text-red-800' }
+  { name: 'Awkward', count: 0, color: 'bg-red-100 text-red-800' },
+  { name: 'Confessions', count: 0, color: 'bg-indigo-100 text-indigo-800' }
 ];
 
 // Simple in-memory cache for dumps

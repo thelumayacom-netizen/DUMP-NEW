@@ -772,7 +772,7 @@ const startVideoRecording = async () => {
               Tags (optional) - Select up to 3
             </Label>
             <div className="flex flex-wrap gap-2">
-              {categories.slice(0, 8).map((category) => (
+              {categories.slice(0, 9).map((category) => (
                 <Badge
                   key={category.name}
                   variant={selectedTags.includes(category.name.toLowerCase()) ? 'default' : 'outline'}
