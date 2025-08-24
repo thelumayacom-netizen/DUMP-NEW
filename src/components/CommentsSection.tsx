@@ -44,15 +44,7 @@ const CommentsSection = ({ dumpId }: CommentsSectionProps) => {
     loadComments()
   }, [dumpId, toast])
 
-  // Auto-scroll to bottom when comments change
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
-  }, [comments])
+ 
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: string) => {
