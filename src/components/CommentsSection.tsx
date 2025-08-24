@@ -120,7 +120,7 @@ const CommentsSection = ({ dumpId }: CommentsSectionProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[350px] max-h-[60vh]">
+    <div className="flex flex-col h-[280px] max-h-[50vh]">
       {/* Comments List */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
         {isLoading ? (
@@ -141,16 +141,18 @@ const CommentsSection = ({ dumpId }: CommentsSectionProps) => {
             </div>
           </div>
         ) : (
-          <div className="space-y-2 pb-4">
+          <div className="space-y-1 pb-4">
             {comments.map((comment) => (
-              <div key={comment.id} className="border-b border-border/50 pb-2">
-                <div className="py-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">{formatTimestamp(comment.created_at)}</span>
+              <div key={comment.id} className="border-b border-border/50 pb-1">
+                <div className="py-1">
+                  <div className="flex items-start gap-2 mb-1">
+                    <p className="text-sm text-foreground leading-relaxed break-words flex-1">{comment.content}</p>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatTimestamp(comment.created_at)}
+                    </span>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed break-words">{comment.content}</p>
                   {(comment.upvotes > 0 || comment.downvotes > 0) && (
-                    <div className="flex items-center space-x-2 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground">
                       {comment.upvotes > 0 && <span>👍 {comment.upvotes}</span>}
                       {comment.downvotes > 0 && <span>👎 {comment.downvotes}</span>}
                     </div>
