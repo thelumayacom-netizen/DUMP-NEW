@@ -4,6 +4,21 @@ import type { Database } from '@/lib/supabase';
 export type Dump = Database['public']['Tables']['dumps']['Row'];
 export type DumpInsert = Database['public']['Tables']['dumps']['Insert'];
 
+// Add Comment types
+export type Comment = {
+  id: string;
+  dump_id: string;
+  content: string;
+  created_at: string;
+  upvotes: number;
+  downvotes: number;
+};
+
+export type CommentInsert = {
+  dump_id: string;
+  content: string;
+};
+
 // Categories remain static for now, but can be made dynamic later
 export const categories = [
   { name: 'Funny', count: 0, color: 'bg-yellow-100 text-yellow-800' },
@@ -19,16 +34,16 @@ export const categories = [
 // Simple in-memory cache for dumps
 const dumpCache = {
   dumps: [] as DumpWithTimestamp[],
-  seenDumps: new Set<string>(), // Track seen dump IDs
   lastFetch: 0,
   cacheExpiry: 5 * 60 * 1000, // 5 minutes
+  seenDumps: new Set<string>(), // Track seen dump IDs
   isExpired(): boolean {
     return Date.now() - this.lastFetch > this.cacheExpiry;
   },
   clear(): void {
     this.dumps = [];
     this.lastFetch = 0;
-    // Don't clear seenDumps to maintain session
+    this.seenDumps.clear(); // Clear seen dumps when cache is cleared
   }
 };
 
@@ -51,6 +66,8 @@ const getDumpType = (fileType: string): 'image' | 'voice' | 'video' => {
 // Add timestamp field to Dump type for consistency
 export type DumpWithTimestamp = Dump & {
   timestamp: string;
+  comments?: Comment[];
+  commentCount?: number;
 };
 
 // Fetch dumps from database and update cache
@@ -167,13 +184,16 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
   try {
     let dumps: DumpWithTimestamp[] = [];
 
+    // Check if cache is valid and has data
     if (dumpCache.dumps.length > 0 && !dumpCache.isExpired()) {
       dumps = dumpCache.dumps;
     } else {
+      // Fetch from database and update cache
       dumps = await fetchAndCacheDumps();
     }
 
     if (!dumps || dumps.length === 0) {
+      // Return a sample dump if no data exists
       return {
         id: 'sample-1',
         type: 'text',
@@ -187,27 +207,36 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
       };
     }
 
-    // Filter out dumps the user has already seen
+    // Filter out dumps that have already been seen
     const unseenDumps = dumps.filter(dump => !dumpCache.seenDumps.has(dump.id));
-    
+
+    let selectedDump: DumpWithTimestamp;
+
     // If all dumps have been seen, reset and start over
     if (unseenDumps.length === 0) {
       dumpCache.seenDumps.clear();
       const randomIndex = Math.floor(Math.random() * dumps.length);
-      const selectedDump = dumps[randomIndex];
+      selectedDump = dumps[randomIndex];
       dumpCache.seenDumps.add(selectedDump.id);
-      return selectedDump;
+    } else {
+      // Select random dump from unseen dumps and mark as seen
+      const randomIndex = Math.floor(Math.random() * unseenDumps.length);
+      selectedDump = unseenDumps[randomIndex];
+      dumpCache.seenDumps.add(selectedDump.id);
     }
-
-    // Select random dump from unseen dumps and mark as seen
-    const randomIndex = Math.floor(Math.random() * unseenDumps.length);
-    const selectedDump = unseenDumps[randomIndex];
-    dumpCache.seenDumps.add(selectedDump.id);
     
-    return selectedDump;
+    // Fetch comments for this dump
+    const comments = await getCommentsByDumpId(selectedDump.id);
+    
+    return {
+      ...selectedDump,
+      comments,
+      commentCount: comments.length
+    };
 
   } catch (error) {
     console.error('Get random dump failed:', error);
+    // Return sample dump on error
     return {
       id: 'sample-error',
       type: 'text',
@@ -233,7 +262,7 @@ export const getDumpsByCategory = async (category: string): Promise<DumpWithTime
 
     if (error) {
       console.error('Error fetching dumps by category:', error);
-      return null;
+      return [];
     }
 
     return (data || []).map(dump => ({
@@ -398,5 +427,140 @@ export const updateCategoryStats = async () => {
   } catch (error) {
     console.error('Update category stats failed:', error);
     return categories;
+  }
+};
+
+// === COMMENT FUNCTIONS ===
+
+// Get comments for a specific dump
+export const getCommentsByDumpId = async (dumpId: string): Promise<Comment[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('dump_id', dumpId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Get comments by dump ID failed:', error);
+    return [];
+  }
+};
+
+// Add a new comment
+export const addComment = async (commentData: CommentInsert): Promise<{ success: boolean; message: string; comment?: Comment }> => {
+  try {
+    // Validate comment content
+    if (!commentData.content.trim()) {
+      return {
+        success: false,
+        message: "Comment cannot be empty"
+      };
+    }
+
+    if (commentData.content.length > 500) {
+      return {
+        success: false,
+        message: "Comment is too long (max 500 characters)"
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        dump_id: commentData.dump_id,
+        content: commentData.content.trim()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Database insert error for comment:', error);
+      throw new Error(`Failed to save comment: ${error.message}`);
+    }
+
+    return {
+      success: true,
+      message: "Comment added successfully!",
+      comment: data
+    };
+  } catch (error) {
+    console.error('Add comment failed:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to add comment"
+    };
+  }
+};
+
+// Rate a comment (upvote/downvote)
+export const rateComment = async (commentId: string, rating: 'up' | 'down'): Promise<{ success: boolean; message: string }> => {
+  try {
+    // First, get current vote counts
+    const { data: currentComment, error: fetchError } = await supabase
+      .from('comments')
+      .select('upvotes, downvotes')
+      .eq('id', commentId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch comment: ${fetchError.message}`);
+    }
+
+    // Update vote counts
+    const updates = rating === 'up' 
+      ? { upvotes: currentComment.upvotes + 1 }
+      : { downvotes: currentComment.downvotes + 1 };
+
+    const { error: updateError } = await supabase
+      .from('comments')
+      .update(updates)
+      .eq('id', commentId);
+
+    if (updateError) {
+      throw new Error(`Failed to update comment vote: ${updateError.message}`);
+    }
+
+    return {
+      success: true,
+      message: `Comment ${rating === 'up' ? 'upvoted' : 'downvoted'} successfully!`
+    };
+  } catch (error) {
+    console.error('Rate comment failed:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to rate comment"
+    };
+  }
+};
+
+// Delete comment (for moderation purposes - you might want to add admin auth later)
+export const deleteComment = async (commentId: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      throw new Error(`Failed to delete comment: ${error.message}`);
+    }
+
+    return {
+      success: true,
+      message: "Comment deleted successfully"
+    };
+  } catch (error) {
+    console.error('Delete comment failed:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to delete comment"
+    };
   }
 };
