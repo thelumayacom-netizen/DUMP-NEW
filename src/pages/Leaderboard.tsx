@@ -81,7 +81,7 @@ const Leaderboard = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full -translate-y-10 translate-x-10"></div>
                 <stat.icon className="w-12 h-12 text-accent mx-auto mb-4 relative z-10" />
                 <div className="text-3xl font-black text-white mb-2 relative z-10">
-                  {stat.value}
+                  {loading && index === 0 ? "0" : stat.value}
                 </div>
                 <div className="text-white/70 text-base font-medium relative z-10">
                   {stat.label}
