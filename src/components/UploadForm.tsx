@@ -487,21 +487,29 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
             <Label className="text-base font-medium">What type of dump is this?</Label>
             <div className="flex gap-3">
               {(['text', 'image', 'voice', 'video'] as const).map((type) => (
-                <Button
-                  key={type}
-                  type="button"
-                  variant={dumpType === type ? 'default' : 'outline'}
-                  onClick={() => setDumpType(type)}
-                  className={`capitalize flex-1 ${
-  type === 'voice' && dumpType === 'voice' 
-    ? 'ring-2 ring-orange-400 bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
-    : type === 'voice' 
-      ? 'ring-2 ring-orange-400 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
-      : ''
-}`}
-                >
-                  {type === 'voice' ? 'Audio' : type === 'video' ? 'Video' : type}
-                </Button>
+                <div key={type} className="relative flex-1">
+                  <Button
+                    type="button"
+                    variant={dumpType === type ? 'default' : 'outline'}
+                    onClick={() => setDumpType(type)}
+                    className={`capitalize w-full ${
+                      type === 'voice' && dumpType === 'voice' 
+                        ? 'ring-2 ring-orange-400 bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
+                        : type === 'voice' 
+                          ? 'ring-2 ring-orange-400 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
+                          : ''
+                    }`}
+                  >
+                    {type === 'voice' ? 'Audio' : type === 'video' ? 'Video' : type}
+                  </Button>
+                  {type === 'voice' && (
+                    <Badge 
+                      className="absolute -top-2 -right-1 bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 font-semibold shadow-sm"
+                    >
+                      EVENT
+                    </Badge>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -831,35 +839,40 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
           <Button
             type="button"
             onClick={handleSubmit}
-            className={`w-full transition-all duration-300 ${submitSuccess ? 'bg-green-600 hover:bg-green-700' : ''
-              }`}
+            className={`w-full transition-all duration-300 ${
+              submitSuccess 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : dumpType === 'voice' 
+                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                  : ''
+            }`}
             size="lg"
             disabled={isSubmitting || isRecording}
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Submitting...
+                {dumpType === 'voice' ? 'Submitting for Event...' : 'Submitting...'}
               </div>
             ) : submitSuccess ? (
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
-                Submitted Successfully!
+                {dumpType === 'voice' ? 'Submitted for Event!' : 'Submitted Successfully!'}
               </div>
             ) : (
-              "Submit Dump Anonymously"
+              dumpType === 'voice' ? 'Submit for Event' : 'Submit Dump Anonymously'
             )}
           </Button>
 
           {submitSuccess && (
-  <div className="text-center text-sm">
-    {dumpType === 'voice' ? (
-      <span className="text-orange-600">Your voice memo has been added to our special event collection! 🎤</span>
-    ) : (
-      <span className="text-green-600">Your dump has been shared anonymously with the community! 🎉</span>
-    )}
-  </div>
-)}
+            <div className="text-center text-sm">
+              {dumpType === 'voice' ? (
+                <span className="text-orange-600">Your voice memo has been added to our special event collection! 🎤</span>
+              ) : (
+                <span className="text-green-600">Your dump has been shared anonymously with the community! 🎉</span>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
