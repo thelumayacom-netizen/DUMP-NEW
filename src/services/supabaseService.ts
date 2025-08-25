@@ -48,7 +48,6 @@ const dumpCache = {
   }
 };
 
-
 // Helper function to get storage bucket based on file type
 const getStorageBucket = (fileType: string): string => {
   if (fileType.startsWith('image/')) return 'dump-images';
@@ -72,12 +71,14 @@ export type DumpWithTimestamp = Dump & {
   commentCount?: number;
   title?: string | null; // Add title field
 };
-// Fetch dumps from database and update cache
+
+// Fetch dumps from database and update cache (excluding voice memos)
 const fetchAndCacheDumps = async (): Promise<DumpWithTimestamp[]> => {
   try {
     const { data, error } = await supabase
       .from('dumps')
       .select('*')
+      .neq('type', 'voice') // Exclude voice memos
       .limit(500); // Increase limit for better cache
 
     if (error) {
@@ -132,7 +133,7 @@ export const uploadFile = async (file: File): Promise<string> => {
   }
 };
 
-// Upload dump to database
+// Upload dump to database (still allows voice uploads for the event)
 export const uploadDump = async (dumpData: {
   type: 'text' | 'image' | 'voice' | 'video';
   content: string;
@@ -171,7 +172,9 @@ export const uploadDump = async (dumpData: {
 
     return {
       success: true,
-      message: "Dump submitted successfully!",
+      message: dumpData.type === 'voice' 
+        ? "Voice memo submitted successfully! It will be revealed during our special event." 
+        : "Dump submitted successfully!",
       dump: data
     };
   } catch (error) {
@@ -183,7 +186,7 @@ export const uploadDump = async (dumpData: {
   }
 };
 
-// Get random dump with caching
+// Get random dump with caching (excluding voice memos)
 export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
   try {
     let dumps: DumpWithTimestamp[] = [];
@@ -257,13 +260,14 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
   }
 };
 
-// Get dumps by category
+// Get dumps by category (excluding voice memos)
 export const getDumpsByCategory = async (category: string): Promise<DumpWithTimestamp[]> => {
   try {
     const { data, error } = await supabase
       .from('dumps')
       .select('*')
       .contains('tags', [category.toLowerCase()])
+      .neq('type', 'voice') // Exclude voice memos
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -354,11 +358,12 @@ export const getTopRatedDumps = async (): Promise<DumpWithTimestamp[]> => {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    // First check if there are at least 10 posts in last 24 hours
+    // First check if there are at least 10 posts in last 24 hours (excluding voice)
     const { data: recentData, error: recentError } = await supabase
       .from('dumps')
       .select('*')
       .gte('created_at', twentyFourHoursAgo.toISOString())
+      .neq('type', 'voice') // Exclude voice memos
       .order('upvotes', { ascending: false })
       .limit(10);
 
@@ -375,10 +380,11 @@ export const getTopRatedDumps = async (): Promise<DumpWithTimestamp[]> => {
       }));
     }
 
-    // Otherwise, get top 10 without time limit
+    // Otherwise, get top 10 without time limit (excluding voice)
     const { data, error } = await supabase
       .from('dumps')
       .select('*')
+      .neq('type', 'voice') // Exclude voice memos
       .order('upvotes', { ascending: false })
       .limit(10);
 
@@ -397,12 +403,13 @@ export const getTopRatedDumps = async (): Promise<DumpWithTimestamp[]> => {
   }
 };
 
-// Get recent dumps
+// Get recent dumps (excluding voice memos)
 export const getRecentDumps = async (limit: number = 10): Promise<DumpWithTimestamp[]> => {
   try {
     const { data, error } = await supabase
       .from('dumps')
       .select('*')
+      .neq('type', 'voice') // Exclude voice memos
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -421,12 +428,13 @@ export const getRecentDumps = async (limit: number = 10): Promise<DumpWithTimest
   }
 };
 
-// Get dump statistics
+// Get dump statistics (excluding voice memos for public stats)
 export const getDumpStats = async () => {
   try {
     const { count, error } = await supabase
       .from('dumps')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .neq('type', 'voice'); // Exclude voice memos from public count
 
     if (error) {
       console.error('Error fetching dump stats:', error);
@@ -439,6 +447,8 @@ export const getDumpStats = async () => {
     return { totalDumps: 0 };
   }
 };
+
+
 
 // Update category counts (call this periodically or on demand)
 export const updateCategoryStats = async () => {

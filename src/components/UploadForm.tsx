@@ -429,8 +429,10 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       if (result.success) {
         setSubmitSuccess(true);
         toast({
-          title: "🎉 Dump submitted successfully!",
-          description: "Your anonymous dump has been shared with the community.",
+          title: dumpType === 'voice' ? "🎤 Voice memo submitted for event!" : "🎉 Dump submitted successfully!",
+          description: dumpType === 'voice'
+            ? "Your voice confession has been collected for our special event reveal!"
+            : "Your anonymous dump has been shared with the community.",
           duration: 4000,
         });
 
@@ -490,7 +492,13 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
                   type="button"
                   variant={dumpType === type ? 'default' : 'outline'}
                   onClick={() => setDumpType(type)}
-                  className="capitalize flex-1"
+                  className={`capitalize flex-1 ${
+  type === 'voice' && dumpType === 'voice' 
+    ? 'ring-2 ring-orange-400 bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
+    : type === 'voice' 
+      ? 'ring-2 ring-orange-400 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
+      : ''
+}`}
                 >
                   {type === 'voice' ? 'Audio' : type === 'video' ? 'Video' : type}
                 </Button>
@@ -844,10 +852,14 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
           </Button>
 
           {submitSuccess && (
-            <div className="text-center text-green-600 text-sm">
-              Your dump has been shared anonymously with the community! 🎉
-            </div>
-          )}
+  <div className="text-center text-sm">
+    {dumpType === 'voice' ? (
+      <span className="text-orange-600">Your voice memo has been added to our special event collection! 🎤</span>
+    ) : (
+      <span className="text-green-600">Your dump has been shared anonymously with the community! 🎉</span>
+    )}
+  </div>
+)}
         </div>
       </CardContent>
     </Card>
