@@ -137,6 +137,7 @@ export const uploadDump = async (dumpData: {
   content: string;
   tags: string[];
   file?: File;
+  title?: string; // Add title parameter
 }): Promise<{ success: boolean; message: string; dump?: Dump }> => {
   try {
     let content = dumpData.content;
@@ -150,6 +151,7 @@ export const uploadDump = async (dumpData: {
       type: dumpData.type,
       content,
       tags: dumpData.tags,
+      title: dumpData.title || null, // Add title to insert data
     };
 
     const { data, error } = await supabase

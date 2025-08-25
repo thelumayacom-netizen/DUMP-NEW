@@ -16,6 +16,7 @@ interface UploadFormProps {
 const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [dumpType, setDumpType] = useState<'text' | 'image' | 'voice' | 'video'>('text');
   const [textContent, setTextContent] = useState('');
+  const [imageTitle, setImageTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -420,6 +421,7 @@ const startVideoRecording = async () => {
         content: dumpType === 'text' ? textContent : URL.createObjectURL(file!),
         tags: selectedTags,
         file: dumpType !== 'text' ? file || undefined : undefined,
+        title: dumpType === 'image' && imageTitle.trim() ? imageTitle.trim() : undefined,
       };
 
       const result = await uploadDump(dumpData);
@@ -434,6 +436,7 @@ const startVideoRecording = async () => {
         
         // Reset form
         setTextContent('');
+        setImageTitle('');
         setSelectedTags([]);
         setFile(null);
         setDumpType('text');
@@ -518,6 +521,21 @@ const startVideoRecording = async () => {
           {dumpType === 'image' && (
             <div className="space-y-4">
               <Label>Upload Image/GIF or Take Photo</Label>
+              
+              {/* Image Title Input */}
+              <div className="space-y-2">
+                <Label htmlFor="imageTitle">Image Title (optional)</Label>
+                <Input
+                  id="imageTitle"
+                  placeholder="Add a title for your image..."
+                  value={imageTitle}
+                  onChange={(e) => setImageTitle(e.target.value)}
+                  maxLength={100}
+                />
+                <div className="text-sm text-muted-foreground text-right">
+                  {imageTitle.length}/100 characters
+                </div>
+              </div>
               
               {/* Camera View */}
               {showCamera && (
