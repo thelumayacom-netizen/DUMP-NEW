@@ -50,7 +50,11 @@ const Leaderboard = () => {
   const dumpOfTheDay = topRatedDumps[0];
 
   const statsDisplay = [
-    { label: "Total Dumps", value: stats.totalDumps.toLocaleString(), icon: TrendingUp },
+    { 
+      label: "Total Dumps", 
+      value: `${(700 + stats.totalDumps).toLocaleString()}`, 
+      icon: TrendingUp 
+    },
     { label: "Recent Dumps", value: stats.activeToday.toString(), icon: Clock },
     { label: "Top Rating", value: `${stats.topRating}★`, icon: Star },
     { label: "Categories", value: stats.categories.toString(), icon: Trophy },
