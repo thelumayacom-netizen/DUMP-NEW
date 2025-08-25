@@ -16,7 +16,7 @@ interface UploadFormProps {
 const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [dumpType, setDumpType] = useState<'text' | 'image' | 'voice' | 'video'>('text');
   const [textContent, setTextContent] = useState('');
-  const [imageTitle, setImageTitle] = useState('');
+  const [title, setTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,8 +37,8 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
+    setSelectedTags(prev =>
+      prev.includes(tag)
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
@@ -62,172 +62,172 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
   // Start camera for photo capture
   // REPLACE ALL CAMERA-RELATED FUNCTIONS WITH THESE:
 
-// Start camera for photo capture
-const startCamera = async () => {
-  try {
-    console.log('Starting camera...');
-    
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('Camera API not supported');
+  // Start camera for photo capture
+  const startCamera = async () => {
+    try {
+      console.log('Starting camera...');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: 'user'
+        },
+        audio: false
+      });
+
+      console.log('Stream obtained:', stream);
+      setMediaStream(stream);
+      setShowCamera(true);
+
+      // Wait for next tick to ensure video element is in DOM
+      setTimeout(() => {
+        if (videoRef.current && stream) {
+          console.log('Setting up video element');
+          videoRef.current.srcObject = stream;
+
+          videoRef.current.onloadedmetadata = () => {
+            console.log('Video metadata loaded');
+            if (videoRef.current) {
+              videoRef.current.play()
+                .then(() => console.log('Video playing'))
+                .catch(err => console.error('Play failed:', err));
+            }
+          };
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('Camera error:', error);
+      let errorMessage = "Camera access failed: ";
+
+      switch (error.name) {
+        case 'NotAllowedError':
+          errorMessage += "Permission denied. Please allow camera access.";
+          break;
+        case 'NotFoundError':
+          errorMessage += "No camera found.";
+          break;
+        case 'NotReadableError':
+          errorMessage += "Camera is busy or hardware error.";
+          break;
+        default:
+          errorMessage += error.message || "Unknown error.";
+      }
+
+      toast({
+        title: "Camera Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Capture photo from camera
+  const capturePhoto = () => {
+    console.log('Capturing photo...');
+
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref not available');
+      return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 640, max: 1280 },
-        height: { ideal: 480, max: 720 },
-        facingMode: 'user'
-      },
-      audio: false
-    });
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
 
-    console.log('Stream obtained:', stream);
-    setMediaStream(stream);
-    setShowCamera(true);
-    
-    // Wait for next tick to ensure video element is in DOM
-    setTimeout(() => {
-      if (videoRef.current && stream) {
-        console.log('Setting up video element');
-        videoRef.current.srcObject = stream;
-        
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
-          if (videoRef.current) {
-            videoRef.current.play()
-              .then(() => console.log('Video playing'))
-              .catch(err => console.error('Play failed:', err));
-          }
-        };
-      }
-    }, 100);
-
-  } catch (error) {
-    console.error('Camera error:', error);
-    let errorMessage = "Camera access failed: ";
-    
-    switch (error.name) {
-      case 'NotAllowedError':
-        errorMessage += "Permission denied. Please allow camera access.";
-        break;
-      case 'NotFoundError':
-        errorMessage += "No camera found.";
-        break;
-      case 'NotReadableError':
-        errorMessage += "Camera is busy or hardware error.";
-        break;
-      default:
-        errorMessage += error.message || "Unknown error.";
+    // Check if video is actually playing
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      console.error('Video not ready');
+      toast({
+        title: "Error",
+        description: "Camera not ready. Please wait a moment and try again.",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    toast({
-      title: "Camera Error",
-      description: errorMessage,
-      variant: "destructive",
-    });
-  }
-};
 
-// Capture photo from camera
-const capturePhoto = () => {
-  console.log('Capturing photo...');
-  
-  if (!videoRef.current || !canvasRef.current) {
-    console.error('Video or canvas ref not available');
-    return;
-  }
+    const context = canvas.getContext('2d');
 
-  const video = videoRef.current;
-  const canvas = canvasRef.current;
-  
-  // Check if video is actually playing
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-    console.error('Video not ready');
-    toast({
-      title: "Error",
-      description: "Camera not ready. Please wait a moment and try again.",
-      variant: "destructive",
-    });
-    return;
-  }
-  
-  const context = canvas.getContext('2d');
-  
-  // Set canvas size to video size
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-  
-  console.log('Canvas size:', canvas.width, canvas.height);
-  
-  if (context) {
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Convert to blob and create file
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setFile(file);
-        setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.8));
-        stopCamera();
-        console.log('Photo captured successfully');
-      } else {
-        console.error('Failed to create blob');
-      }
-    }, 'image/jpeg', 0.8);
-  }
-};
+    // Set canvas size to video size
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
 
-// Stop camera
-const stopCamera = () => {
-  console.log('Stopping camera...');
-  
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => {
-      track.stop();
-      console.log('Track stopped:', track.kind);
-    });
-    setMediaStream(null);
-  }
-  
-  if (videoRef.current) {
-    videoRef.current.srcObject = null;
-  }
-  
-  setShowCamera(false);
-};
+    console.log('Canvas size:', canvas.width, canvas.height);
+
+    if (context) {
+      // Draw video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to blob and create file
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setFile(file);
+          setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.8));
+          stopCamera();
+          console.log('Photo captured successfully');
+        } else {
+          console.error('Failed to create blob');
+        }
+      }, 'image/jpeg', 0.8);
+    }
+  };
+
+  // Stop camera
+  const stopCamera = () => {
+    console.log('Stopping camera...');
+
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('Track stopped:', track.kind);
+      });
+      setMediaStream(null);
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setShowCamera(false);
+  };
 
   // Start audio recording
   const startAudioRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setMediaStream(stream);
-      
+
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      
+
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
-      
+
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         const file = new File([blob], 'recorded-audio.webm', { type: 'audio/webm' });
         setFile(file);
         setRecordedChunks([]);
       };
-      
+
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
+
       // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-      
+
     } catch (error) {
       toast({
         title: "Microphone Error",
@@ -238,134 +238,134 @@ const stopCamera = () => {
   };
 
   // Start video recording
- // helper: pick a supported MediaRecorder mimeType (try VP8/VP9)
-const getSupportedVideoMimeType = () => {
-  const candidates = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-    'video/mp4' // rarely supported by MediaRecorder
-  ];
-  for (const c of candidates) {
-    if ((window as any).MediaRecorder && (window as any).MediaRecorder.isTypeSupported && (window as any).MediaRecorder.isTypeSupported(c)) {
-      return c;
+  // helper: pick a supported MediaRecorder mimeType (try VP8/VP9)
+  const getSupportedVideoMimeType = () => {
+    const candidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4' // rarely supported by MediaRecorder
+    ];
+    for (const c of candidates) {
+      if ((window as any).MediaRecorder && (window as any).MediaRecorder.isTypeSupported && (window as any).MediaRecorder.isTypeSupported(c)) {
+        return c;
+      }
     }
-  }
-  return undefined;
-};
+    return undefined;
+  };
 
-const startVideoRecording = async () => {
-  try {
-    // request camera + mic
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720, facingMode: 'user' },
-      audio: true
-    });
-
-    console.log('got stream', stream);
-    // quick check: ensure there's a video track
-    const videoTracks = stream.getVideoTracks();
-    console.log('videoTracks', videoTracks);
-    if (!videoTracks || videoTracks.length === 0) {
-      toast({
-        title: "Camera Error",
-        description: "No video track available. Please check your camera.",
-        variant: "destructive",
+  const startVideoRecording = async () => {
+    try {
+      // request camera + mic
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: 'user' },
+        audio: true
       });
-      // still attach audio if you want, but exit for video recording
-      stream.getTracks().forEach(t => t.stop());
-      return;
-    }
 
-    setMediaStream(stream);
-    setShowCamera(true);
-
-    // ensure video element is ready in the DOM, then attach stream and play
-    // small timeout or use requestAnimationFrame to wait for render
-    setTimeout(() => {
-      if (!videoRef.current) {
-        console.warn('videoRef not ready yet');
+      console.log('got stream', stream);
+      // quick check: ensure there's a video track
+      const videoTracks = stream.getVideoTracks();
+      console.log('videoTracks', videoTracks);
+      if (!videoTracks || videoTracks.length === 0) {
+        toast({
+          title: "Camera Error",
+          description: "No video track available. Please check your camera.",
+          variant: "destructive",
+        });
+        // still attach audio if you want, but exit for video recording
+        stream.getTracks().forEach(t => t.stop());
         return;
       }
-      videoRef.current.srcObject = stream;
 
-      // optional: make sure the element will render the right aspect
-      videoRef.current.playsInline = true;
-      // listen for metadata then play
-      videoRef.current.onloadedmetadata = () => {
-        videoRef.current?.play()
-          .then(() => console.log('video element playing'))
-          .catch(err => console.warn('video play() failed', err));
+      setMediaStream(stream);
+      setShowCamera(true);
+
+      // ensure video element is ready in the DOM, then attach stream and play
+      // small timeout or use requestAnimationFrame to wait for render
+      setTimeout(() => {
+        if (!videoRef.current) {
+          console.warn('videoRef not ready yet');
+          return;
+        }
+        videoRef.current.srcObject = stream;
+
+        // optional: make sure the element will render the right aspect
+        videoRef.current.playsInline = true;
+        // listen for metadata then play
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play()
+            .then(() => console.log('video element playing'))
+            .catch(err => console.warn('video play() failed', err));
+        };
+
+        // If loadedmetadata already happened, try play immediately
+        if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
+          videoRef.current.play().catch(err => console.warn('play failed', err));
+        }
+      }, 50);
+
+      // create recorder with a supported mimeType
+      const mimeType = getSupportedVideoMimeType();
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      } catch (e) {
+        console.warn('MediaRecorder constructor failed, trying without options', e);
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          chunks.push(event.data);
+        }
       };
 
-      // If loadedmetadata already happened, try play immediately
-      if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
-        videoRef.current.play().catch(err => console.warn('play failed', err));
-      }
-    }, 50);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: chunks[0]?.type || 'video/webm' });
+        const file = new File([blob], `recorded-video-${Date.now()}.webm`, { type: blob.type });
+        setFile(file);
+        setRecordedChunks([]); // you can also setRecordedChunks(chunks)
+        // keep stopCamera behavior: stop showing camera and stop tracks
+        stopCamera();
+      };
 
-    // create recorder with a supported mimeType
-    const mimeType = getSupportedVideoMimeType();
-    let mediaRecorder: MediaRecorder;
-    try {
-      mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-    } catch (e) {
-      console.warn('MediaRecorder constructor failed, trying without options', e);
-      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+    } catch (err: any) {
+      console.error('startVideoRecording error:', err);
+      toast({
+        title: "Camera/Microphone Error",
+        description: err?.message || "Could not access camera or microphone. Please check permissions.",
+        variant: "destructive",
+      });
     }
-
-    mediaRecorderRef.current = mediaRecorder;
-
-    const chunks: Blob[] = [];
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) {
-        chunks.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: chunks[0]?.type || 'video/webm' });
-      const file = new File([blob], `recorded-video-${Date.now()}.webm`, { type: blob.type });
-      setFile(file);
-      setRecordedChunks([]); // you can also setRecordedChunks(chunks)
-      // keep stopCamera behavior: stop showing camera and stop tracks
-      stopCamera();
-    };
-
-    mediaRecorder.start();
-    setIsRecording(true);
-    setRecordingTime(0);
-
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-
-  } catch (err: any) {
-    console.error('startVideoRecording error:', err);
-    toast({
-      title: "Camera/Microphone Error",
-      description: err?.message || "Could not access camera or microphone. Please check permissions.",
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
     }
-    
+
     if (mediaStream) {
       mediaStream.getTracks().forEach(track => track.stop());
       setMediaStream(null);
     }
-    
+
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-    
+
     setIsRecording(false);
     setRecordingTime(0);
   };
@@ -378,9 +378,9 @@ const startVideoRecording = async () => {
   };
 
   const handleSubmit = async () => {
-    
+
     if (isSubmitting) return;
-    
+
     setIsSubmitting(true);
     setSubmitSuccess(false);
 
@@ -421,11 +421,11 @@ const startVideoRecording = async () => {
         content: dumpType === 'text' ? textContent : URL.createObjectURL(file!),
         tags: selectedTags,
         file: dumpType !== 'text' ? file || undefined : undefined,
-        title: dumpType === 'image' && imageTitle.trim() ? imageTitle.trim() : undefined,
+        title: dumpType !== 'text' && title.trim() ? title.trim() : undefined,
       };
 
       const result = await uploadDump(dumpData);
-      
+
       if (result.success) {
         setSubmitSuccess(true);
         toast({
@@ -433,15 +433,15 @@ const startVideoRecording = async () => {
           description: "Your anonymous dump has been shared with the community.",
           duration: 4000,
         });
-        
+
         // Reset form
         setTextContent('');
-        setImageTitle('');
+        setTitle('');
         setSelectedTags([]);
         setFile(null);
         setDumpType('text');
         setCapturedPhoto(null);
-        
+
         // Call success callback if provided
         if (onSuccess) {
           setTimeout(() => {
@@ -465,14 +465,13 @@ const startVideoRecording = async () => {
         duration: 4000,
       });
     }
-    
+
     setIsSubmitting(false);
   };
 
   return (
-    <Card className={`w-full max-w-2xl mx-auto shadow-lg transition-all duration-300 ${
-      submitSuccess ? 'ring-2 ring-green-500 bg-green-50' : ''
-    }`}>
+    <Card className={`w-full max-w-2xl mx-auto shadow-lg transition-all duration-300 ${submitSuccess ? 'ring-2 ring-green-500 bg-green-50' : ''
+      }`}>
       <CardHeader>
         <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
           {submitSuccess && <CheckCircle className="w-6 h-6 text-green-600" />}
@@ -499,6 +498,23 @@ const startVideoRecording = async () => {
             </div>
           </div>
 
+          {/* Universal Title Input - for all types except text */}
+          {dumpType !== 'text' && (
+            <div className="space-y-2">
+              <Label htmlFor="title">Title (optional)</Label>
+              <Input
+                id="title"
+                placeholder={`Add a title for your ${dumpType === 'voice' ? 'audio' : dumpType}...`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+              />
+              <div className="text-sm text-muted-foreground text-right">
+                {title.length}/100 characters
+              </div>
+            </div>
+          )}
+
           {/* Content Input */}
           {dumpType === 'text' && (
             <div className="space-y-2">
@@ -521,22 +537,10 @@ const startVideoRecording = async () => {
           {dumpType === 'image' && (
             <div className="space-y-4">
               <Label>Upload Image/GIF or Take Photo</Label>
-              
+
               {/* Image Title Input */}
-              <div className="space-y-2">
-                <Label htmlFor="imageTitle">Image Title (optional)</Label>
-                <Input
-                  id="imageTitle"
-                  placeholder="Add a title for your image..."
-                  value={imageTitle}
-                  onChange={(e) => setImageTitle(e.target.value)}
-                  maxLength={100}
-                />
-                <div className="text-sm text-muted-foreground text-right">
-                  {imageTitle.length}/100 characters
-                </div>
-              </div>
-              
+
+
               {/* Camera View */}
               {showCamera && (
                 <div className="space-y-3">
@@ -610,7 +614,7 @@ const startVideoRecording = async () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="text-center">
                     <Button type="button" variant="outline" onClick={startCamera} className="flex items-center gap-2">
                       <Camera className="w-4 h-4" />
@@ -619,7 +623,7 @@ const startVideoRecording = async () => {
                   </div>
                 </div>
               )}
-              
+
               <canvas ref={canvasRef} className="hidden" />
             </div>
           )}
@@ -628,7 +632,7 @@ const startVideoRecording = async () => {
           {dumpType === 'voice' && (
             <div className="space-y-4">
               <Label>Upload Audio File or Record</Label>
-              
+
               {/* Recording Interface */}
               {isRecording && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
@@ -684,7 +688,7 @@ const startVideoRecording = async () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="text-center">
                     <Button type="button" variant="outline" onClick={startAudioRecording} className="flex items-center gap-2">
                       <Mic className="w-4 h-4" />
@@ -700,7 +704,7 @@ const startVideoRecording = async () => {
           {dumpType === 'video' && (
             <div className="space-y-4">
               <Label>Upload Video File or Record</Label>
-              
+
               {/* Recording Interface */}
               {/* Recording Interface */}
               {isRecording && dumpType === 'video' && (
@@ -720,10 +724,10 @@ const startVideoRecording = async () => {
                     </div>
                   </div>
                   <div className="flex justify-center gap-3">
-                    <Button 
-                      type="button" 
-                      onClick={stopRecording} 
-                      variant="destructive" 
+                    <Button
+                      type="button"
+                      onClick={stopRecording}
+                      variant="destructive"
                       size="lg"
                       className="flex items-center gap-2"
                     >
@@ -772,7 +776,7 @@ const startVideoRecording = async () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="text-center">
                     <Button type="button" variant="outline" onClick={startVideoRecording} className="flex items-center gap-2">
                       <Video className="w-4 h-4" />
@@ -795,7 +799,7 @@ const startVideoRecording = async () => {
                   key={category.name}
                   variant={selectedTags.includes(category.name.toLowerCase()) ? 'default' : 'outline'}
                   className="cursor-pointer hover:bg-primary/20 transition-colors"
-                  onClick={() => selectedTags.length < 3 || selectedTags.includes(category.name.toLowerCase()) ? 
+                  onClick={() => selectedTags.length < 3 || selectedTags.includes(category.name.toLowerCase()) ?
                     handleTagToggle(category.name.toLowerCase()) : null
                   }
                 >
@@ -819,9 +823,8 @@ const startVideoRecording = async () => {
           <Button
             type="button"
             onClick={handleSubmit}
-            className={`w-full transition-all duration-300 ${
-              submitSuccess ? 'bg-green-600 hover:bg-green-700' : ''
-            }`}
+            className={`w-full transition-all duration-300 ${submitSuccess ? 'bg-green-600 hover:bg-green-700' : ''
+              }`}
             size="lg"
             disabled={isSubmitting || isRecording}
           >
@@ -839,7 +842,7 @@ const startVideoRecording = async () => {
               "Submit Dump Anonymously"
             )}
           </Button>
-          
+
           {submitSuccess && (
             <div className="text-center text-green-600 text-sm">
               Your dump has been shared anonymously with the community! 🎉

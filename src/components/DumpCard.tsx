@@ -193,6 +193,15 @@ const DumpCard = ({
               </div>
             </div>
 
+            {/* Title Display */}
+            {dump.title && (
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-foreground leading-tight">
+                  {dump.title}
+                </h2>
+              </div>
+            )}
+
             {/* Content */}
             <div className="mb-6">
               {dump.type === "text" && <p className="text-lg leading-relaxed text-foreground">{dump.content}</p>}

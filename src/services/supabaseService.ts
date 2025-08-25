@@ -48,6 +48,7 @@ const dumpCache = {
   }
 };
 
+
 // Helper function to get storage bucket based on file type
 const getStorageBucket = (fileType: string): string => {
   if (fileType.startsWith('image/')) return 'dump-images';
@@ -69,8 +70,8 @@ export type DumpWithTimestamp = Dump & {
   timestamp: string;
   comments?: Comment[];
   commentCount?: number;
+  title?: string | null; // Add title field
 };
-
 // Fetch dumps from database and update cache
 const fetchAndCacheDumps = async (): Promise<DumpWithTimestamp[]> => {
   try {
@@ -201,6 +202,7 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
         id: 'sample-1',
         type: 'text',
         content: 'Welcome to DumpSpace! This is a sample dump. Submit your own thoughts to see real content from the community.',
+        title: 'Welcome to DumpSpace!', // Add title to sample
         tags: ['welcome', 'sample'],
         upvotes: 42,
         downvotes: 3,
@@ -244,6 +246,7 @@ export const getRandomDump = async (): Promise<DumpWithTimestamp | null> => {
       id: 'sample-error',
       type: 'text',
       content: 'Unable to fetch dumps right now. This is a sample dump to show you how DumpSpace works!',
+      title: 'Connection Error', // Add title to error sample
       tags: ['sample'],
       upvotes: 10,
       downvotes: 1,
